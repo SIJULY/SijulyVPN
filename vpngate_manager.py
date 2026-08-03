@@ -286,7 +286,7 @@ except Exception:
     pass
 
 def get_session_token(password: str, username: str = "admin") -> str:
-    salt = "aimilivpn_secure_salt_2026"
+    salt = "sijulyvpn_secure_salt_2026"
     return hashlib.sha256((username + ":" + password + salt).encode("utf-8")).hexdigest()
 
 _last_cleanup_time = 0.0

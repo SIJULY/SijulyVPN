@@ -81,7 +81,7 @@ elif [ "$PKG_MGR" = "dnf" ] || [ "$PKG_MGR" = "yum" ]; then
 fi
 
 # 4. Clone or pull the repository
-INSTALL_DIR="/opt/aimilivpn"
+INSTALL_DIR="/opt/sijulyvpn"
 # 默认部署分支（在 bate 分支设为 bate；在 main 分支设为 main）
 DEFAULT_DEPLOY_BRANCH="main"
 
@@ -132,8 +132,8 @@ fi
 # 5. Configure Service
 echo -e "\n${YELLOW}[3/4] 正在配置系统服务...${PLAIN}"
 if command -v systemctl >/dev/null 2>&1; then
-    echo -e "  -> 检测到 systemd，正在创建服务配置 /lib/systemd/system/aimilivpn.service ..."
-    cat > /lib/systemd/system/aimilivpn.service <<EOF
+    echo -e "  -> 检测到 systemd，正在创建服务配置 /lib/systemd/system/sijulyvpn.service ..."
+    cat > /lib/systemd/system/sijulyvpn.service <<EOF
 [Unit]
 Description=SijulyVPN OpenVPN Manager with HTTP/SOCKS5 Proxy
 After=network.target
@@ -144,16 +144,16 @@ WorkingDirectory=${INSTALL_DIR}
 ExecStart=/usr/bin/python3 vpngate_manager.py
 Restart=always
 RestartSec=5
-EnvironmentFile=-/etc/default/aimilivpn
+EnvironmentFile=-/etc/default/sijulyvpn
 
 [Install]
 WantedBy=multi-user.target
 EOF
     systemctl daemon-reload
-    systemctl enable aimilivpn.service
+    systemctl enable sijulyvpn.service
 elif command -v rc-service >/dev/null 2>&1; then
-    echo -e "  -> 检测到 OpenRC，正在创建服务配置 /etc/init.d/aimilivpn ..."
-    cat > /etc/init.d/aimilivpn <<EOF
+    echo -e "  -> 检测到 OpenRC，正在创建服务配置 /etc/init.d/sijulyvpn ..."
+    cat > /etc/init.d/sijulyvpn <<EOF
 #!/sbin/openrc-run
 
 description="SijulyVPN OpenVPN Manager with HTTP/SOCKS5 Proxy"
@@ -161,15 +161,15 @@ command="/usr/bin/python3"
 command_args="${INSTALL_DIR}/vpngate_manager.py"
 command_background="yes"
 directory="${INSTALL_DIR}"
-pidfile="/run/aimilivpn.pid"
+pidfile="/run/sijulyvpn.pid"
 
 depend() {
     need net
     after firewall
 }
 EOF
-    chmod +x /etc/init.d/aimilivpn
-    rc-update add aimilivpn default
+    chmod +x /etc/init.d/sijulyvpn
+    rc-update add sijulyvpn default
 else
     echo -e "${YELLOW}警告: 未能检测到 systemd 或 OpenRC，请手动管理服务。${PLAIN}"
 fi
@@ -188,8 +188,8 @@ import tty
 import termios
 import shutil
 
-INSTALL_DIR = "/opt/aimilivpn"
-LOG_FILE = "/opt/aimilivpn/vpngate_data/vpngate.log"
+INSTALL_DIR = "/opt/sijulyvpn"
+LOG_FILE = "/opt/sijulyvpn/vpngate_data/vpngate.log"
 
 def generate_random_password():
     import random
@@ -207,7 +207,7 @@ def generate_random_suffix():
 
 def load_ui_cfg():
     import json
-    path = "/opt/aimilivpn/vpngate_data/ui_auth.json"
+    path = "/opt/sijulyvpn/vpngate_data/ui_auth.json"
     cfg = {"host": "::", "port": 8787, "secret_path": "EJsW2EeBo9lY", "password": ""}
     if os.path.exists(path):
         try:
@@ -221,7 +221,7 @@ def load_ui_cfg():
 
 def save_ui_cfg(cfg):
     import json
-    path = "/opt/aimilivpn/vpngate_data/ui_auth.json"
+    path = "/opt/sijulyvpn/vpngate_data/ui_auth.json"
     os.makedirs(os.path.dirname(path), exist_ok=True)
     try:
         with open(path, "w", encoding="utf-8") as f:
@@ -232,7 +232,7 @@ def save_ui_cfg(cfg):
 
 def load_state():
     import json
-    path = "/opt/aimilivpn/vpngate_data/state.json"
+    path = "/opt/sijulyvpn/vpngate_data/state.json"
     state = {"active_openvpn_node_id": "", "last_check_message": "", "is_connecting": False}
     if os.path.exists(path):
         try:
@@ -246,7 +246,7 @@ def load_state():
 
 def get_active_node_info():
     import json
-    path = "/opt/aimilivpn/vpngate_data/nodes.json"
+    path = "/opt/sijulyvpn/vpngate_data/nodes.json"
     state = load_state()
     active_id = state.get("active_openvpn_node_id")
     if not active_id:
@@ -286,7 +286,7 @@ def ping_ip(ip):
         return "无法连接"
 
 def get_public_ip():
-    path = "/opt/aimilivpn/vpngate_data/public_ip.txt"
+    path = "/opt/sijulyvpn/vpngate_data/public_ip.txt"
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
@@ -326,7 +326,7 @@ def check_port_listening(port):
             pass
     return False
 
-def get_service_pid(service_name="aimilivpn.service"):
+def get_service_pid(service_name="sijulyvpn.service"):
     try:
         for pid_dir in os.listdir('/proc'):
             if pid_dir.isdigit():
@@ -341,7 +341,7 @@ def get_service_pid(service_name="aimilivpn.service"):
         pass
     return None
 
-def check_service_active(service_name="aimilivpn.service"):
+def check_service_active(service_name="sijulyvpn.service"):
     return get_service_pid(service_name) is not None
 
 def check_openvpn_process():
@@ -351,7 +351,7 @@ def check_openvpn_process():
                 try:
                     with open(os.path.join('/proc', pid_dir, 'cmdline'), 'r') as f:
                         cmd = f.read().replace('\x00', ' ')
-                        if 'openvpn' in cmd and ('/opt/aimilivpn/vpngate_data' in cmd or '/opt/aimilivpn/vpngate_data/configs' in cmd):
+                        if 'openvpn' in cmd and ('/opt/sijulyvpn/vpngate_data' in cmd or '/opt/sijulyvpn/vpngate_data/configs' in cmd):
                             return True
                 except Exception:
                     continue
@@ -389,9 +389,9 @@ def print_status():
     is_connecting = state.get("is_connecting", False)
     
     gateway_ok = check_port_listening(proxy_port)
-    service_ok = check_service_active("aimilivpn.service")
+    service_ok = check_service_active("sijulyvpn.service")
     openvpn_ok = check_openvpn_process()
-    pid = get_service_pid("aimilivpn.service")
+    pid = get_service_pid("sijulyvpn.service")
     
     active_ip, active_loc = get_active_node_info()
     latency = state.get("active_node_latency", "测试中...") if active_ip else "无活动连接"
@@ -480,9 +480,9 @@ def print_status():
 
 def run_service_cmd(cmd):
     if shutil.which("systemctl"):
-        subprocess.run(["systemctl", cmd, "aimilivpn.service"])
+        subprocess.run(["systemctl", cmd, "sijulyvpn.service"])
     elif shutil.which("rc-service"):
-        subprocess.run(["rc-service", "aimilivpn", cmd])
+        subprocess.run(["rc-service", "sijulyvpn", cmd])
     else:
         print("未检测到支持的服务管理器 (systemd/OpenRC)")
 
@@ -581,15 +581,15 @@ def uninstall_service():
         print("正在完全卸载 SijulyVPN...", flush=True)
         stop_service()
         if shutil.which("systemctl"):
-            subprocess.run(["systemctl", "disable", "aimilivpn.service"])
+            subprocess.run(["systemctl", "disable", "sijulyvpn.service"])
             try:
-                os.unlink("/lib/systemd/system/aimilivpn.service")
+                os.unlink("/lib/systemd/system/sijulyvpn.service")
             except Exception:
                 pass
         elif shutil.which("rc-service"):
-            subprocess.run(["rc-update", "del", "aimilivpn"])
+            subprocess.run(["rc-update", "del", "sijulyvpn"])
             try:
-                os.unlink("/etc/init.d/aimilivpn")
+                os.unlink("/etc/init.d/sijulyvpn")
             except Exception:
                 pass
         try:
@@ -825,9 +825,9 @@ def get_status_state():
         state.get("proxy_latency_ms", 0),
         state.get("proxy_ok", False),
         check_port_listening(proxy_port),
-        check_service_active("aimilivpn.service"),
+        check_service_active("sijulyvpn.service"),
         check_openvpn_process(),
-        get_service_pid("aimilivpn.service")
+        get_service_pid("sijulyvpn.service")
     )
 
 def main():
@@ -1073,11 +1073,11 @@ fi
 # 8.5 Optimize network parameters (rp_filter for policy routing)
 echo -e "\n正在优化网络参数 (配置反向路径过滤 rp_filter=2 以支持策略路由)..."
 if [ -d "/etc/sysctl.d" ]; then
-    cat > /etc/sysctl.d/99-aimilivpn.conf <<EOF
+    cat > /etc/sysctl.d/99-sijulyvpn.conf <<EOF
 net.ipv4.conf.all.rp_filter = 2
 net.ipv4.conf.default.rp_filter = 2
 EOF
-    sysctl -p /etc/sysctl.d/99-aimilivpn.conf >/dev/null 2>&1 || true
+    sysctl -p /etc/sysctl.d/99-sijulyvpn.conf >/dev/null 2>&1 || true
 else
     # Fallback to appending to /etc/sysctl.conf
     if ! grep -q "net.ipv4.conf.all.rp_filter" /etc/sysctl.conf; then
@@ -1102,9 +1102,9 @@ fi
 
 echo -e "\n正在启动 SijulyVPN 服务并初始化网络..."
 if command -v systemctl >/dev/null 2>&1; then
-    systemctl restart aimilivpn.service || true
+    systemctl restart sijulyvpn.service || true
 elif command -v rc-service >/dev/null 2>&1; then
-    rc-service aimilivpn restart || true
+    rc-service sijulyvpn restart || true
 fi
 
 # Wait and poll for node loading and active connection
