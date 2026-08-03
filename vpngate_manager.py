@@ -4570,13 +4570,6 @@ async function saveNetwork(e) {
 
 
 
-function openVpsModal() {
-  $("vps_recommend_modal").style.display = "flex";
-}
-
-function closeVpsModal() {
-  $("vps_recommend_modal").style.display = "none";
-}
 
 async function logoutAdmin() {
   try {
