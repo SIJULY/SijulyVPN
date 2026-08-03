@@ -139,6 +139,7 @@ Description=SijulyVPN OpenVPN Manager with HTTP/SOCKS5 Proxy
 After=network.target
 
 [Service]
+Environment="LOCAL_PROXY_HOST=::"
 Type=simple
 WorkingDirectory=${INSTALL_DIR}
 ExecStart=/usr/bin/python3 vpngate_manager.py
